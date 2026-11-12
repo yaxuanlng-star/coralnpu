@@ -1,0 +1,46 @@
+
+name: Build Coral NPU Verification RTL
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-rtl:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-cache: true
+          repository-cache: true
+
+      - name: Generate Verification RTL
+        run: |
+          bazel build \
+            //hdl/chisel/src/coralnpu:rvv_core_mini_verification_axi_cc_library_emit_verilog
+
+      - name: Check generated RTL
+        run: |
+          find -L bazel-bin/hdl/chisel/src/coralnpu \
+            -name 'RvvCoreMiniVerificationAxi*' \
+            -print
+
+          test -s \
+            bazel-bin/hdl/chisel/src/coralnpu/RvvCoreMiniVerificationAxi.sv
+
+      - name: Upload RTL
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoralNPU-Verification-RTL
+          if-no-files-found: error
+          path: |
+            bazel-bin/hdl/chisel/src/coralnpu/RvvCoreMiniVerificationAxi.sv
+            bazel-bin/hdl/chisel/src/coralnpu/RvvCoreMiniVerificationAxi.zip
