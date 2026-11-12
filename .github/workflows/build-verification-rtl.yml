@@ -44,3 +44,22 @@ jobs:
           path: |
             bazel-bin/hdl/chisel/src/coralnpu/RvvCoreMiniVerificationAxi.sv
             bazel-bin/hdl/chisel/src/coralnpu/RvvCoreMiniVerificationAxi.zip
+
+      - name: Build official test ELF
+        run: |
+          bazel build //tests/cocotb/tutorial:coralnpu_v2_program
+
+      - name: Collect ELF
+        run: |
+          mkdir -p elf-artifacts
+          find -L bazel-bin/tests/cocotb/tutorial \
+            -type f -name 'coralnpu_v2_program.elf' \
+            -exec cp -v {} elf-artifacts/ \;
+          test -s elf-artifacts/coralnpu_v2_program.elf
+
+      - name: Upload ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoralNPU-Test-ELF
+          path: elf-artifacts/coralnpu_v2_program.elf
+          if-no-files-found: error
